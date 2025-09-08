@@ -6,16 +6,22 @@ local StarterGui = game:GetService("StarterGui")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Remote และ Wave
+-- ตัวแปร Remote และ Wave
 local cw = ReplicatedStorage:WaitForChild("Values"):WaitForChild("Waves"):WaitForChild("CurrentWave")
 local remoteRestart = ReplicatedStorage:WaitForChild("Remote"):WaitForChild("Server"):WaitForChild("OnGame"):WaitForChild("RestartMatch")
 local voteRetryRemote = ReplicatedStorage:WaitForChild("Remote"):WaitForChild("Server"):WaitForChild("OnGame"):WaitForChild("Voting"):WaitForChild("VoteRetry")
 local adventureModeEndRemote = ReplicatedStorage:WaitForChild("Remote"):WaitForChild("AdventureModeEnd")
 
--- UI
-local screenGui = Instance.new("ScreenGui", playerGui)
+-- สร้าง ScreenGui
+local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "AutoRestartUI"
+screenGui.Parent = playerGui
+screenGui.DisplayOrder = 9999
+screenGui.IgnoreGuiInset = true
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
 
+-- สร้าง Frame (ขนาดพอดี)
 local frame = Instance.new("Frame")
 frame.Size = UDim2.new(0, 350, 0, 470)
 frame.Position = UDim2.new(0, 20, 0, 50)
@@ -28,7 +34,7 @@ frame.Draggable = true
 local textColor = Color3.fromRGB(255, 255, 255)
 local accentColor = Color3.fromRGB(0, 170, 255)
 
--- หัวข้อ
+-- ชื่อหัวข้อ
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 40)
 title.BackgroundTransparency = 1
@@ -75,7 +81,7 @@ local function createToggle(text, posY, callback)
     end)
 end
 
--- ฟังก์ชันปุ่มกด
+-- ฟังก์ชันสร้างปุ่มกด
 local function createButton(text, posY, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -40, 0, 40)
@@ -86,10 +92,11 @@ local function createButton(text, posY, callback)
     btn.TextSize = 22
     btn.Text = text
     btn.Parent = frame
+
     btn.MouseButton1Click:Connect(callback)
 end
 
--- ฟังก์ชันแจ้งเตือน
+-- ฟังก์ชันแจ้งเตือน (Notification)
 local function notify(title, text)
     pcall(function()
         StarterGui:SetCore("SendNotification", {
@@ -100,12 +107,12 @@ local function notify(title, text)
     end)
 end
 
--- สถานะ Toggle
+-- สถานะ toggle
 local bugEventEnabled = false
 local autoRetryEnabled = false
 local adventureModeEndEnabled = false
 
--- Toggle: Bug Event
+-- Toggle Bug Event
 createToggle("Bug Event (Restart Wave 2)", 60, function(state)
     bugEventEnabled = state
     if state then
@@ -115,7 +122,6 @@ createToggle("Bug Event (Restart Wave 2)", 60, function(state)
                 if cw.Value == 2 then
                     print("Wave 2/2 detected! Restarting match...")
                     remoteRestart:FireServer()
-                    task.wait(2)
                 end
                 task.wait(0.5)
             end
@@ -125,7 +131,7 @@ createToggle("Bug Event (Restart Wave 2)", 60, function(state)
     end
 end)
 
--- Toggle: Auto Retry
+-- Toggle Auto Retry
 createToggle("Auto Retry (Vote Retry)", 110, function(state)
     autoRetryEnabled = state
     if state then
@@ -135,7 +141,6 @@ createToggle("Auto Retry (Vote Retry)", 110, function(state)
                 if playerGui:FindFirstChild("GameEndedAnimationUI") then
                     print("Game ended detected! Sending VoteRetry...")
                     voteRetryRemote:FireServer()
-                    task.wait(1)
                 end
                 task.wait(0.5)
             end
@@ -145,7 +150,7 @@ createToggle("Auto Retry (Vote Retry)", 110, function(state)
     end
 end)
 
--- Toggle: Adventure End Trigger
+-- Toggle Adventure End Trigger
 createToggle("Adventure End Trigger", 160, function(state)
     adventureModeEndEnabled = state
     if state then
@@ -154,7 +159,7 @@ createToggle("Adventure End Trigger", 160, function(state)
             while adventureModeEndEnabled do
                 print("Triggering AdventureModeEnd with false")
                 adventureModeEndRemote:FireServer(false)
-                task.wait(2)
+                task.wait(2) -- ป้องกัน spam เร็วเกินไป
             end
         end)
     else
@@ -162,29 +167,31 @@ createToggle("Adventure End Trigger", 160, function(state)
     end
 end)
 
--- ปุ่มกดทันที
+-- ปุ่ม Restart Now
 createButton("Restart Now", 210, function()
     print("Restart Now button pressed")
     remoteRestart:FireServer()
     notify("Manual Action", "Restart triggered")
 end)
 
+-- ปุ่ม Vote Retry Now
 createButton("Vote Retry Now", 260, function()
     print("Vote Retry Now button pressed")
     voteRetryRemote:FireServer()
     notify("Manual Action", "Vote Retry triggered")
 end)
 
+-- ปุ่ม Adventure End Trigger Now
 createButton("Adventure End Trigger Now", 310, function()
     print("Adventure End Trigger Now button pressed")
     adventureModeEndRemote:FireServer(false)
     notify("Manual Action", "Adventure End triggered")
 end)
 
--- สถานะแมตช์ Real-Time
+-- อัพเดตสถานะแมตช์แบบ Real-Time
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, -40, 0, 30)
-statusLabel.Position = UDim2.new(0, 20, 0, 420)
+statusLabel.Position = UDim2.new(0, 20, 0, 360)
 statusLabel.BackgroundTransparency = 1
 statusLabel.TextColor3 = textColor
 statusLabel.Font = Enum.Font.SourceSans
@@ -199,4 +206,3 @@ task.spawn(function()
         task.wait(1)
     end
 end)
-
