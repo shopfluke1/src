@@ -16,33 +16,68 @@ local adventureModeEndRemote = ReplicatedStorage:WaitForChild("Remote"):WaitForC
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "AutoRestartUI"
 screenGui.Parent = playerGui
-screenGui.DisplayOrder = 9999
-screenGui.IgnoreGuiInset = true
-screenGui.ResetOnSpawn = false
-screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+screenGui.ResetOnSpawn = false  -- ให้ UI อยู่ต่อแม้ Respawn
 
 -- สร้าง Frame (ขนาดพอดี)
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 350, 0, 470)
+frame.Size = UDim2.new(0, 350, 0, 520)
 frame.Position = UDim2.new(0, 20, 0, 50)
 frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 frame.BorderSizePixel = 0
 frame.Parent = screenGui
-frame.Active = true
-frame.Draggable = true
+frame.ZIndex = 999 -- ให้ UI อยู่บนสุด
 
 local textColor = Color3.fromRGB(255, 255, 255)
 local accentColor = Color3.fromRGB(0, 170, 255)
 
 -- ชื่อหัวข้อ
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 40)
+title.Size = UDim2.new(1, -40, 0, 40)
 title.BackgroundTransparency = 1
 title.Text = "Auto Restart Control"
 title.TextColor3 = textColor
 title.Font = Enum.Font.SourceSansBold
 title.TextSize = 24
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Position = UDim2.new(0, 10, 0, 0)
 title.Parent = frame
+
+-- ปุ่มพับ/ขยาย UI
+local minimized = false
+
+local minimizeButton = Instance.new("TextButton")
+minimizeButton.Size = UDim2.new(0, 40, 1, 0)
+minimizeButton.Position = UDim2.new(1, -40, 0, 0)
+minimizeButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+minimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+minimizeButton.Text = "-"
+minimizeButton.Font = Enum.Font.SourceSansBold
+minimizeButton.TextSize = 24
+minimizeButton.Parent = frame
+
+minimizeButton.MouseButton1Click:Connect(function()
+    if minimized then
+        -- ขยายกลับ
+        frame.Size = UDim2.new(0, 350, 0, 520)
+        for _, child in pairs(frame:GetChildren()) do
+            if child ~= minimizeButton and child ~= title then
+                child.Visible = true
+            end
+        end
+        minimizeButton.Text = "-"
+        minimized = false
+    else
+        -- พับ UI เหลือแค่หัวข้อ
+        frame.Size = UDim2.new(0, 350, 0, 40)
+        for _, child in pairs(frame:GetChildren()) do
+            if child ~= minimizeButton and child ~= title then
+                child.Visible = false
+            end
+        end
+        minimizeButton.Text = "+"
+        minimized = true
+    end
+end)
 
 -- ฟังก์ชันสร้าง Toggle
 local function createToggle(text, posY, callback)
@@ -96,6 +131,11 @@ local function createButton(text, posY, callback)
     btn.MouseButton1Click:Connect(callback)
 end
 
+-- ตัวแปรสถานะ
+local bugEventEnabled = false
+local autoRetryEnabled = false
+local adventureModeEndEnabled = false
+
 -- ฟังก์ชันแจ้งเตือน (Notification)
 local function notify(title, text)
     pcall(function()
@@ -107,11 +147,6 @@ local function notify(title, text)
     end)
 end
 
--- สถานะ toggle
-local bugEventEnabled = false
-local autoRetryEnabled = false
-local adventureModeEndEnabled = false
-
 -- Toggle Bug Event
 createToggle("Bug Event (Restart Wave 2)", 60, function(state)
     bugEventEnabled = state
@@ -122,6 +157,7 @@ createToggle("Bug Event (Restart Wave 2)", 60, function(state)
                 if cw.Value == 2 then
                     print("Wave 2/2 detected! Restarting match...")
                     remoteRestart:FireServer()
+                    task.wait(2)
                 end
                 task.wait(0.5)
             end
@@ -141,6 +177,7 @@ createToggle("Auto Retry (Vote Retry)", 110, function(state)
                 if playerGui:FindFirstChild("GameEndedAnimationUI") then
                     print("Game ended detected! Sending VoteRetry...")
                     voteRetryRemote:FireServer()
+                    task.wait(1)
                 end
                 task.wait(0.5)
             end
@@ -159,7 +196,7 @@ createToggle("Adventure End Trigger", 160, function(state)
             while adventureModeEndEnabled do
                 print("Triggering AdventureModeEnd with false")
                 adventureModeEndRemote:FireServer(false)
-                task.wait(2) -- ป้องกัน spam เร็วเกินไป
+                task.wait(2)
             end
         end)
     else
@@ -191,7 +228,7 @@ end)
 -- อัพเดตสถานะแมตช์แบบ Real-Time
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, -40, 0, 30)
-statusLabel.Position = UDim2.new(0, 20, 0, 360)
+statusLabel.Position = UDim2.new(0, 20, 0, 370)
 statusLabel.BackgroundTransparency = 1
 statusLabel.TextColor3 = textColor
 statusLabel.Font = Enum.Font.SourceSans
@@ -203,6 +240,40 @@ statusLabel.Parent = frame
 task.spawn(function()
     while true do
         statusLabel.Text = "Current Wave: "..tostring(cw.Value)
-        task.wait(1)
+        task.wait(1) -- อัปเดตช้าๆ ป้องกัน UI สั่น
+    end
+end)
+
+-- ให้ UI ขยับได้ (Draggable)
+local dragging, dragInput, dragStart, startPos
+
+frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = frame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+frame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
     end
 end)
