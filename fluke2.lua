@@ -1,28 +1,29 @@
+-- โหลดบริการ
 local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterGui = game:GetService("StarterGui")
 
-local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
-
-local cw = ReplicatedStorage.Values.Waves.CurrentWave
-local remoteRestart = ReplicatedStorage.Remote.Server.OnGame.RestartMatch
-local voteRetryRemote = ReplicatedStorage.Remote.Server.OnGame.Voting.VoteRetry
+-- รอ Remote และตัวแปรให้ครบถ้วน
+local cw = ReplicatedStorage:WaitForChild("Values"):WaitForChild("Waves"):WaitForChild("CurrentWave")
+local remoteRestart = ReplicatedStorage:WaitForChild("Remote"):WaitForChild("Server"):WaitForChild("OnGame"):WaitForChild("RestartMatch")
+local voteRetryRemote = ReplicatedStorage:WaitForChild("Remote"):WaitForChild("Server"):WaitForChild("OnGame"):WaitForChild("Voting"):WaitForChild("VoteRetry")
+local adventureModeEndRemote = ReplicatedStorage:WaitForChild("Remote"):WaitForChild("AdventureModeEnd")
 
 -- สร้าง ScreenGui
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "AutoRestartUI"
 screenGui.Parent = playerGui
 
--- สร้าง Main Frame
+-- สร้าง Frame (ขยายสูง)
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 350, 0, 400)
+frame.Size = UDim2.new(0, 350, 0, 520)  -- ขยายความสูง
 frame.Position = UDim2.new(0, 20, 0, 50)
 frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 frame.BorderSizePixel = 0
 frame.Parent = screenGui
 
--- ฟอนต์และสี
 local textColor = Color3.fromRGB(255, 255, 255)
 local accentColor = Color3.fromRGB(0, 170, 255)
 
@@ -36,7 +37,7 @@ title.Font = Enum.Font.SourceSansBold
 title.TextSize = 24
 title.Parent = frame
 
--- ฟังก์ชันสร้าง Toggle Button
+-- ฟังก์ชันสร้าง Toggle
 local function createToggle(text, posY, callback)
     local toggleFrame = Instance.new("Frame")
     toggleFrame.Size = UDim2.new(1, -40, 0, 40)
@@ -73,7 +74,7 @@ local function createToggle(text, posY, callback)
     end)
 end
 
--- ฟังก์ชันสร้าง Input Box สำหรับ Delay
+-- ฟังก์ชันสร้าง Input Box
 local function createInput(text, posY, callback)
     local inputFrame = Instance.new("Frame")
     inputFrame.Size = UDim2.new(1, -40, 0, 40)
@@ -134,9 +135,21 @@ end
 -- ตัวแปรสถานะและ delay
 local bugEventEnabled = false
 local autoRetryEnabled = false
+local adventureModeEndEnabled = false
 
 local restartDelay = 2
 local retryDelay = 1
+
+-- ฟังก์ชันแจ้งเตือน
+local function notify(title, text)
+    pcall(function()
+        StarterGui:SetCore("SendNotification", {
+            Title = title,
+            Text = text,
+            Duration = 3,
+        })
+    end)
+end
 
 -- Toggle Bug Event
 createToggle("Bug Event (Restart Wave 2)", 60, function(state)
@@ -178,45 +191,57 @@ createToggle("Auto Retry (Vote Retry)", 110, function(state)
     end
 end)
 
+-- Toggle Adventure End Trigger
+createToggle("Adventure End Trigger", 160, function(state)
+    adventureModeEndEnabled = state
+    if state then
+        notify("Adventure End Trigger", "Enabled")
+        task.spawn(function()
+            while adventureModeEndEnabled do
+                print("Triggering AdventureModeEnd with false")
+                adventureModeEndRemote:FireServer(false)
+                task.wait(2)
+            end
+        end)
+    else
+        notify("Adventure End Trigger", "Disabled")
+    end
+end)
+
 -- Input Delay Restart
-createInput("Restart Delay (seconds):", 160, function(num)
+createInput("Restart Delay (seconds):", 210, function(num)
     restartDelay = num
     print("Restart delay set to", restartDelay)
 end)
 
 -- Input Delay Retry
-createInput("Retry Delay (seconds):", 210, function(num)
+createInput("Retry Delay (seconds):", 260, function(num)
     retryDelay = num
     print("Retry delay set to", retryDelay)
 end)
 
 -- ปุ่ม Restart Now
-createButton("Restart Now", 260, function()
+createButton("Restart Now", 310, function()
     print("Restart Now button pressed")
     remoteRestart:FireServer()
 end)
 
 -- ปุ่ม Vote Retry Now
-createButton("Vote Retry Now", 310, function()
+createButton("Vote Retry Now", 360, function()
     print("Vote Retry Now button pressed")
     voteRetryRemote:FireServer()
 end)
 
--- ฟังก์ชันแจ้งเตือน Pop-up
-function notify(title, text)
-    pcall(function()
-        StarterGui:SetCore("SendNotification", {
-            Title = title,
-            Text = text,
-            Duration = 3,
-        })
-    end)
-end
+-- ปุ่ม Adventure End Trigger Now
+createButton("Adventure End Trigger Now", 410, function()
+    print("Adventure End Trigger Now button pressed")
+    adventureModeEndRemote:FireServer(false)
+end)
 
 -- อัพเดตสถานะแมตช์แบบ Real-Time
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, -40, 0, 30)
-statusLabel.Position = UDim2.new(0, 20, 0, 360)
+statusLabel.Position = UDim2.new(0, 20, 0, 470)
 statusLabel.BackgroundTransparency = 1
 statusLabel.TextColor3 = textColor
 statusLabel.Font = Enum.Font.SourceSans
