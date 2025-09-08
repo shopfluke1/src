@@ -11,9 +11,7 @@ frame.Size = UDim2.new(0, 350, 0, 520)
 frame.Position = UDim2.new(0, 20, 0, 50)
 frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 frame.BorderSizePixel = 0
-frame.ZIndex = 50
-frame.Active = true
-frame.Draggable = true
+frame.ZIndex = 10
 frame.Parent = screenGui
 
 local textColor = Color3.fromRGB(255, 255, 255)
@@ -21,7 +19,7 @@ local accentColor = Color3.fromRGB(0, 170, 255)
 
 -- ชื่อหัวข้อ
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -90, 0, 40)
+title.Size = UDim2.new(1, -90, 0, 40) -- เหลือที่ให้ปุ่มข้างขวา
 title.Position = UDim2.new(0, 10, 0, 0)
 title.BackgroundTransparency = 1
 title.Text = "Auto Restart Control"
@@ -29,7 +27,7 @@ title.TextColor3 = textColor
 title.Font = Enum.Font.SourceSansBold
 title.TextSize = 24
 title.TextXAlignment = Enum.TextXAlignment.Left
-title.ZIndex = 55
+title.ZIndex = 15
 title.Parent = frame
 
 -- ปุ่มพับ/ขยาย UI
@@ -42,9 +40,7 @@ minimizeButton.TextColor3 = textColor
 minimizeButton.Text = "-"
 minimizeButton.Font = Enum.Font.SourceSansBold
 minimizeButton.TextSize = 24
-minimizeButton.ZIndex = 60
-minimizeButton.BorderSizePixel = 1
-minimizeButton.BorderColor3 = Color3.new(1,1,1)
+minimizeButton.ZIndex = 20
 minimizeButton.Parent = frame
 
 -- ปุ่มกากบาท ปิด UI (ซ่อน)
@@ -56,9 +52,7 @@ closeButton.TextColor3 = textColor
 closeButton.Text = "✖"
 closeButton.Font = Enum.Font.SourceSansBold
 closeButton.TextSize = 24
-closeButton.ZIndex = 60
-closeButton.BorderSizePixel = 1
-closeButton.BorderColor3 = Color3.new(1,1,1)
+closeButton.ZIndex = 20
 closeButton.Parent = frame
 
 -- ปุ่มเปิด UI (ซ่อนเริ่มต้น)
@@ -71,7 +65,7 @@ openButton.Text = "Open UI"
 openButton.Font = Enum.Font.SourceSansBold
 openButton.TextSize = 22
 openButton.Visible = false
-openButton.ZIndex = 100
+openButton.ZIndex = 50
 openButton.Parent = playerGui
 
 -- พฤติกรรมปุ่มพับ/ขยาย
