@@ -113,7 +113,7 @@ local autoRetryEnabled = false
 local adventureModeEndEnabled = false
 
 -- Toggle Bug Event
-createToggle("Bug Event (Restart Wave 2)", 60, function(state)
+createToggle("Bug Borus (Restart Wave 2)", 60, function(state)
     bugEventEnabled = state
     if state then
         notify("Bug Event", "Auto restart enabled")
@@ -142,7 +142,7 @@ createToggle("Auto Retry (Vote Retry)", 110, function(state)
                     print("Game ended detected! Sending VoteRetry...")
                     voteRetryRemote:FireServer()
                 end
-                task.wait(0.5)
+                task.wait(0.3)
             end
         end)
     else
@@ -206,3 +206,4 @@ task.spawn(function()
         task.wait(1)
     end
 end)
+
