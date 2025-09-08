@@ -22,6 +22,8 @@ frame.Position = UDim2.new(0, 20, 0, 50)
 frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 frame.BorderSizePixel = 0
 frame.Parent = screenGui
+frame.Active = true
+frame.Draggable = true
 
 local textColor = Color3.fromRGB(255, 255, 255)
 local accentColor = Color3.fromRGB(0, 170, 255)
@@ -197,3 +199,4 @@ task.spawn(function()
         task.wait(1)
     end
 end)
+
