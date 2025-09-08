@@ -142,7 +142,7 @@ createToggle("Auto Retry (Vote Retry)", 110, function(state)
                     print("Game ended detected! Sending VoteRetry...")
                     voteRetryRemote:FireServer()
                 end
-                task.wait(0.3)
+                task.wait(0.1)
             end
         end)
     else
