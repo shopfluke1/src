@@ -38,7 +38,7 @@ local accentColor = Color3.fromRGB(0, 170, 255)
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 40)
 title.BackgroundTransparency = 1
-title.Text = "Auto Restart Control"
+title.Text = "NAHEEYESHEE"
 title.TextColor3 = textColor
 title.Font = Enum.Font.SourceSansBold
 title.TextSize = 24
@@ -151,7 +151,7 @@ createToggle("Auto Retry (Vote Retry)", 110, function(state)
 end)
 
 -- Toggle Adventure End Trigger
-createToggle("Adventure End Trigger", 160, function(state)
+createToggle("Adventure End 10 WAVE", 160, function(state)
     adventureModeEndEnabled = state
     if state then
         notify("Adventure End Trigger", "Enabled")
