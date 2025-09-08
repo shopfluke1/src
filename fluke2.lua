@@ -1,11 +1,12 @@
--- โหลดบริการ
+-- บริการหลัก
 local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterGui = game:GetService("StarterGui")
 
--- รอ Remote และตัวแปรให้ครบถ้วน
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- ตัวแปร Remote และ Wave
 local cw = ReplicatedStorage:WaitForChild("Values"):WaitForChild("Waves"):WaitForChild("CurrentWave")
 local remoteRestart = ReplicatedStorage:WaitForChild("Remote"):WaitForChild("Server"):WaitForChild("OnGame"):WaitForChild("RestartMatch")
 local voteRetryRemote = ReplicatedStorage:WaitForChild("Remote"):WaitForChild("Server"):WaitForChild("OnGame"):WaitForChild("Voting"):WaitForChild("VoteRetry")
@@ -16,9 +17,9 @@ local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "AutoRestartUI"
 screenGui.Parent = playerGui
 
--- สร้าง Frame (ขยายสูง)
+-- สร้าง Frame (ขนาดพอดี)
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 350, 0, 520)  -- ขยายความสูง
+frame.Size = UDim2.new(0, 350, 0, 520)
 frame.Position = UDim2.new(0, 20, 0, 50)
 frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 frame.BorderSizePixel = 0
@@ -74,7 +75,7 @@ local function createToggle(text, posY, callback)
     end)
 end
 
--- ฟังก์ชันสร้าง Input Box
+-- ฟังก์ชันสร้าง Input Box สำหรับใส่ Delay
 local function createInput(text, posY, callback)
     local inputFrame = Instance.new("Frame")
     inputFrame.Size = UDim2.new(1, -40, 0, 40)
@@ -99,7 +100,7 @@ local function createInput(text, posY, callback)
     textbox.TextColor3 = textColor
     textbox.Font = Enum.Font.SourceSans
     textbox.TextSize = 18
-    textbox.Text = "2"
+    textbox.Text = "2" -- ค่าเริ่มต้น
     textbox.ClearTextOnFocus = false
     textbox.Parent = inputFrame
 
@@ -110,14 +111,14 @@ local function createInput(text, posY, callback)
                 callback(num)
             else
                 textbox.Text = "Invalid!"
-                wait(1)
+                task.wait(1)
                 textbox.Text = tostring(num or "")
             end
         end
     end)
 end
 
--- ฟังก์ชันสร้างปุ่ม
+-- ฟังก์ชันสร้างปุ่มกด
 local function createButton(text, posY, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -40, 0, 40)
@@ -140,7 +141,7 @@ local adventureModeEndEnabled = false
 local restartDelay = 2
 local retryDelay = 1
 
--- ฟังก์ชันแจ้งเตือน
+-- ฟังก์ชันแจ้งเตือน (Notification)
 local function notify(title, text)
     pcall(function()
         StarterGui:SetCore("SendNotification", {
@@ -224,18 +225,21 @@ end)
 createButton("Restart Now", 310, function()
     print("Restart Now button pressed")
     remoteRestart:FireServer()
+    notify("Manual Action", "Restart triggered")
 end)
 
 -- ปุ่ม Vote Retry Now
 createButton("Vote Retry Now", 360, function()
     print("Vote Retry Now button pressed")
     voteRetryRemote:FireServer()
+    notify("Manual Action", "Vote Retry triggered")
 end)
 
 -- ปุ่ม Adventure End Trigger Now
 createButton("Adventure End Trigger Now", 410, function()
     print("Adventure End Trigger Now button pressed")
     adventureModeEndRemote:FireServer(false)
+    notify("Manual Action", "Adventure End triggered")
 end)
 
 -- อัพเดตสถานะแมตช์แบบ Real-Time
@@ -253,6 +257,6 @@ statusLabel.Parent = frame
 task.spawn(function()
     while true do
         statusLabel.Text = "Current Wave: "..tostring(cw.Value)
-        task.wait(1)
+        task.wait(1) -- อัปเดตช้าๆ ป้องกัน UI สั่น
     end
 end)
