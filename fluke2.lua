@@ -161,7 +161,7 @@ end
 local bugEventEnabled, autoRetryEnabled, adventureModeEndEnabled = false, false, false
 
 -- ✅ Toggle: Bug Event
-createToggle("Bug Borus หน้าหมา", 60, function(state)
+createToggle("Bug Borus  กดปุ่ม off เพื่อโดนเย็ดตูด", 60, function(state)
     bugEventEnabled = state
     notify("Bug Event", state and "Enabled" or "Disabled")
     if state then
@@ -177,7 +177,7 @@ createToggle("Bug Borus หน้าหมา", 60, function(state)
 end)
 
 -- ✅ Toggle: Auto Retry
-createToggle("Auto Retry หน้าหี", 110, function(state)
+createToggle("Auto Retry กดปุ่ม off เพื่อเย็ดหี", 110, function(state)
     autoRetryEnabled = state
     notify("Auto Retry", state and "Enabled" or "Disabled")
     if state then
