@@ -39,7 +39,7 @@ local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, -90, 0, 40)
 title.Position = UDim2.new(0, 10, 0, 0)
 title.BackgroundTransparency = 1
-title.Text = "Auto Restart Control"
+title.Text = "Bankkuysmall49"
 title.TextColor3 = textColor
 title.Font = Enum.Font.SourceSansBold
 title.TextSize = 24
@@ -284,3 +284,4 @@ createStatLabelWithIcon("Gems", 290, icons.Gems)
 createStatLabelWithIcon("XP", 330, icons.XP)
 createStatLabelWithIcon("Level", 370, icons.Level)
 createStatLabelWithIcon("Power", 410, icons.Power)
+
