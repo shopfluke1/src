@@ -161,7 +161,7 @@ end
 local bugEventEnabled, autoRetryEnabled, adventureModeEndEnabled = false, false, false
 
 -- ✅ Toggle: Bug Event
-createToggle("Bug Borus (Restart Wave 2)", 60, function(state)
+createToggle("Bug Borus หน้าหมา", 60, function(state)
     bugEventEnabled = state
     notify("Bug Event", state and "Enabled" or "Disabled")
     if state then
@@ -177,7 +177,7 @@ createToggle("Bug Borus (Restart Wave 2)", 60, function(state)
 end)
 
 -- ✅ Toggle: Auto Retry
-createToggle("Auto Retry (Vote Retry)", 110, function(state)
+createToggle("Auto Retry หน้าหี", 110, function(state)
     autoRetryEnabled = state
     notify("Auto Retry", state and "Enabled" or "Disabled")
     if state then
@@ -193,7 +193,7 @@ createToggle("Auto Retry (Vote Retry)", 110, function(state)
 end)
 
 -- ✅ Toggle: Adventure End
-createToggle("Adventure End (Force End)", 160, function(state)
+createToggle("ด่านใหม่ล่าสุดเย็ดหี", 160, function(state)
     adventureModeEndEnabled = state
     notify("Adventure End", state and "Enabled" or "Disabled")
     if state then
