@@ -6,44 +6,17 @@ local StarterGui = game:GetService("StarterGui")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- 💠 Auto Detect CurrentWave
-local cw
-pcall(function()
-    if ReplicatedStorage:FindFirstChild("Values") and ReplicatedStorage.Values:FindFirstChild("Waves") then
-        cw = ReplicatedStorage.Values.Waves:FindFirstChild("CurrentWave")
-    elseif ReplicatedStorage:FindFirstChild("GameStats") then
-        cw = ReplicatedStorage.GameStats:FindFirstChild("CurrentWave")
-    elseif workspace:FindFirstChild("_wave") then
-        cw = workspace:FindFirstChild("_wave")
-    end
-end)
+-- 💠 Remote & Wave
+local cw = ReplicatedStorage:WaitForChild("Values"):WaitForChild("Waves"):WaitForChild("CurrentWave")
+local remoteRestart = ReplicatedStorage:WaitForChild("Remote"):WaitForChild("Server"):WaitForChild("OnGame"):WaitForChild("RestartMatch")
+local voteRetryRemote = ReplicatedStorage:WaitForChild("Remote"):WaitForChild("Server"):WaitForChild("OnGame"):WaitForChild("Voting"):WaitForChild("VoteRetry")
+local adventureModeEndRemote = ReplicatedStorage:WaitForChild("Remote"):WaitForChild("AdventureModeEnd")
 
-if not cw then
-    warn("[AutoRestartUI] ❌ CurrentWave ไม่เจอ")
-end
+-- 💠 Colors
+local textColor = Color3.fromRGB(255, 255, 255)
+local accentColor = Color3.fromRGB(0, 170, 255)
 
--- 💠 Auto Detect Remote Restart
-local remoteRestart
-pcall(function()
-    if ReplicatedStorage:FindFirstChild("Remote") and ReplicatedStorage.Remote:FindFirstChild("Server") then
-        remoteRestart = ReplicatedStorage.Remote.Server.OnGame:FindFirstChild("RestartMatch")
-    elseif ReplicatedStorage:FindFirstChild("Endpoints") then
-        remoteRestart = ReplicatedStorage.Endpoints.ClientToServer:FindFirstChild("Restart")
-    end
-end)
-
-if not remoteRestart then
-    warn("[AutoRestartUI] ❌ Remote Restart ไม่เจอ")
-end
-
--- 💠 Remote อื่น ๆ
-local voteRetryRemote = ReplicatedStorage:FindFirstChild("Remote")
-    and ReplicatedStorage.Remote.Server.OnGame.Voting:FindFirstChild("VoteRetry")
-
-local adventureModeEndRemote = ReplicatedStorage:FindFirstChild("Remote")
-    and ReplicatedStorage.Remote:FindFirstChild("AdventureModeEnd")
-
--- 💠 UI หลัก
+-- 💠 ScreenGui
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "AutoRestartUI"
 screenGui.Parent = playerGui
@@ -52,8 +25,9 @@ screenGui.IgnoreGuiInset = true
 screenGui.ResetOnSpawn = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
 
+-- 💠 Frame
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 350, 0, 600)
+frame.Size = UDim2.new(0, 350, 0, 750)
 frame.Position = UDim2.new(0, 20, 0, 50)
 frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 frame.BorderSizePixel = 0
@@ -61,15 +35,12 @@ frame.Parent = screenGui
 frame.Active = true
 frame.Draggable = true
 
-local textColor = Color3.fromRGB(255, 255, 255)
-local accentColor = Color3.fromRGB(0, 170, 255)
-
 -- 💠 Title
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, -90, 0, 40)
 title.Position = UDim2.new(0, 10, 0, 0)
 title.BackgroundTransparency = 1
-title.Text = "⚡ Auto Restart UI"
+title.Text = "Auto Restart System"
 title.TextColor3 = textColor
 title.Font = Enum.Font.SourceSansBold
 title.TextSize = 24
@@ -77,7 +48,7 @@ title.TextXAlignment = Enum.TextXAlignment.Left
 title.ZIndex = 15
 title.Parent = frame
 
--- 💠 ปุ่มย่อ/ปิด UI
+-- 💠 Minimize & Close
 local minimized = false
 local minimizeButton = Instance.new("TextButton")
 minimizeButton.Size = UDim2.new(0, 40, 0, 40)
@@ -115,7 +86,7 @@ openButton.Parent = playerGui
 
 minimizeButton.MouseButton1Click:Connect(function()
     minimized = not minimized
-    frame.Size = minimized and UDim2.new(0, 350, 0, 40) or UDim2.new(0, 350, 0, 600)
+    frame.Size = minimized and UDim2.new(0, 350, 0, 40) or UDim2.new(0, 350, 0, 750)
     for _, child in pairs(frame:GetChildren()) do
         if child ~= minimizeButton and child ~= closeButton and child ~= title then
             child.Visible = not minimized
@@ -134,7 +105,7 @@ openButton.MouseButton1Click:Connect(function()
     openButton.Visible = false
 end)
 
--- 💠 Notify ฟังก์ชัน
+-- 💠 Notify
 local function notify(title, text)
     pcall(function()
         StarterGui:SetCore("SendNotification", {
@@ -145,7 +116,7 @@ local function notify(title, text)
     end)
 end
 
--- 💠 ฟังก์ชันสร้าง Toggle
+-- 💠 Toggle Function
 local function createToggle(text, posY, callback)
     local toggleFrame = Instance.new("Frame")
     toggleFrame.Size = UDim2.new(1, -40, 0, 40)
@@ -182,111 +153,99 @@ local function createToggle(text, posY, callback)
     end)
 end
 
--- ✅ เลือก Wave ที่จะ Restart
+-- 💠 Wave Checkbox
 local restartWaveTarget = 1
-local waveSelectFrame = Instance.new("Frame")
-waveSelectFrame.Size = UDim2.new(1, -40, 0, 40)
-waveSelectFrame.Position = UDim2.new(0, 20, 0, 60)
-waveSelectFrame.BackgroundTransparency = 1
-waveSelectFrame.Parent = frame
+local baseY = 60
+local waveFrame = Instance.new("Frame", frame)
+waveFrame.Size = UDim2.new(1, -40, 0, 150)
+waveFrame.Position = UDim2.new(0, 20, 0, baseY)
+waveFrame.BackgroundTransparency = 1
 
-local waveLabel = Instance.new("TextLabel")
-waveLabel.Size = UDim2.new(0.7, 0, 1, 0)
-waveLabel.BackgroundTransparency = 1
-waveLabel.Text = "เลือก Wave สำหรับ Restart"
-waveLabel.TextColor3 = textColor
-waveLabel.Font = Enum.Font.SourceSans
-waveLabel.TextSize = 20
-waveLabel.TextXAlignment = Enum.TextXAlignment.Left
-waveLabel.Parent = waveSelectFrame
+local waveTitle = Instance.new("TextLabel", waveFrame)
+waveTitle.Size = UDim2.new(1, 0, 0, 30)
+waveTitle.Position = UDim2.new(0, 0, 0, 0)
+waveTitle.BackgroundTransparency = 1
+waveTitle.Text = "เลือก Wave สำหรับ Restart"
+waveTitle.TextColor3 = textColor
+waveTitle.Font = Enum.Font.SourceSansBold
+waveTitle.TextSize = 20
+waveTitle.TextXAlignment = Enum.TextXAlignment.Left
 
-local wave1Btn = Instance.new("TextButton")
-wave1Btn.Size = UDim2.new(0, 60, 0, 30)
-wave1Btn.Position = UDim2.new(0.7, 0, 0.15, 0)
-wave1Btn.BackgroundColor3 = accentColor
-wave1Btn.TextColor3 = textColor
-wave1Btn.Text = "Wave 1"
-wave1Btn.Font = Enum.Font.SourceSansBold
-wave1Btn.TextSize = 18
-wave1Btn.Parent = waveSelectFrame
+local waveY = 40
+local waveButtons = {}
+for i=1,5 do
+    local cb = Instance.new("TextButton", waveFrame)
+    cb.Size = UDim2.new(0, 60, 0, 30)
+    cb.Position = UDim2.new(0, (i-1)*65, 0, waveY)
+    cb.BackgroundColor3 = Color3.fromRGB(60,60,60)
+    cb.TextColor3 = textColor
+    cb.Text = "Wave "..i
+    cb.Font = Enum.Font.SourceSansBold
+    cb.TextSize = 16
 
-local wave2Btn = Instance.new("TextButton")
-wave2Btn.Size = UDim2.new(0, 60, 0, 30)
-wave2Btn.Position = UDim2.new(0.9, 0, 0.15, 0)
-wave2Btn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-wave2Btn.TextColor3 = textColor
-wave2Btn.Text = "Wave 2"
-wave2Btn.Font = Enum.Font.SourceSansBold
-wave2Btn.TextSize = 18
-wave2Btn.Parent = waveSelectFrame
-
-local function updateWaveSelection(wave)
-    restartWaveTarget = wave
-    if wave == 1 then
-        wave1Btn.BackgroundColor3 = accentColor
-        wave2Btn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-    else
-        wave1Btn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-        wave2Btn.BackgroundColor3 = accentColor
-    end
-    notify("Restart Wave", "ตั้งค่าเป็น Wave " .. tostring(wave))
+    cb.MouseButton1Click:Connect(function()
+        restartWaveTarget = i
+        for j, btn in ipairs(waveButtons) do
+            btn.BackgroundColor3 = (j==i) and accentColor or Color3.fromRGB(60,60,60)
+        end
+        notify("Restart Wave", "ตั้งค่าเป็น Wave "..i)
+    end)
+    table.insert(waveButtons, cb)
 end
 
-wave1Btn.MouseButton1Click:Connect(function() updateWaveSelection(1) end)
-wave2Btn.MouseButton1Click:Connect(function() updateWaveSelection(2) end)
+-- 💠 Toggles เริ่มต่ำกว่า Wave Checkbox
+local toggleStartY = baseY + 160
 
--- ✅ Toggles
-local bugEventEnabled, autoRetryEnabled, adventureModeEndEnabled = false, false, false
-
-createToggle("Bug Event (Restart)", 110, function(state)
-    bugEventEnabled = state
-    notify("Bug Event", state and "Enabled" or "Disabled")
-    if state then
-        task.spawn(function()
-            while bugEventEnabled do
-                if cw and cw.Value == restartWaveTarget and remoteRestart then
-                    remoteRestart:FireServer()
-                end
-                task.wait(0.5)
-            end
-        end)
-    end
-end)
-
-createToggle("Auto Retry", 160, function(state)
+-- ✅ Auto Retry บนสุด
+createToggle("Auto Retry", toggleStartY, function(state)
     autoRetryEnabled = state
     notify("Auto Retry", state and "Enabled" or "Disabled")
     if state then
         task.spawn(function()
             while autoRetryEnabled do
-                if playerGui:FindFirstChild("GameEndedAnimationUI") and voteRetryRemote then
+                if playerGui:FindFirstChild("GameEndedAnimationUI") then
                     voteRetryRemote:FireServer()
                 end
-                task.wait(0.5)
+                task.wait(0.1)
             end
         end)
     end
 end)
 
-createToggle("Adventure End", 210, function(state)
+-- ✅ Bug Event ข้างล่าง
+createToggle("Bug Event Auto Restart", toggleStartY + 60, function(state)
+    bugEventEnabled = state
+    notify("Bug Event", state and "Enabled" or "Disabled")
+    if state then
+        task.spawn(function()
+            while bugEventEnabled do
+                if cw.Value == restartWaveTarget then
+                    remoteRestart:FireServer()
+                end
+                task.wait(0.1)
+            end
+        end)
+    end
+end)
+
+-- ✅ Adventure End ข้างล่าง
+createToggle("Adventure End", toggleStartY + 120, function(state)
     adventureModeEndEnabled = state
     notify("Adventure End", state and "Enabled" or "Disabled")
     if state then
         task.spawn(function()
             while adventureModeEndEnabled do
-                if adventureModeEndRemote then
-                    adventureModeEndRemote:FireServer(false)
-                end
+                adventureModeEndRemote:FireServer(false)
                 task.wait(2)
             end
         end)
     end
 end)
 
--- ✅ แสดง Wave ปัจจุบัน
+-- 💠 Current Wave Display
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, -40, 0, 30)
-statusLabel.Position = UDim2.new(0, 20, 0, 260)
+statusLabel.Position = UDim2.new(0, 20, 0, toggleStartY + 220)
 statusLabel.BackgroundTransparency = 1
 statusLabel.TextColor3 = textColor
 statusLabel.Font = Enum.Font.SourceSans
@@ -297,11 +256,7 @@ statusLabel.Parent = frame
 
 task.spawn(function()
     while true do
-        if cw then
-            statusLabel.Text = "Current Wave: " .. tostring(cw.Value)
-        else
-            statusLabel.Text = "Current Wave: N/A"
-        end
+        statusLabel.Text = "Current Wave: "..tostring(cw.Value)
         task.wait(1)
     end
 end)
