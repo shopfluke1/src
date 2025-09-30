@@ -27,7 +27,7 @@ screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
 
 -- 💠 Frame
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 350, 0, 750)
+frame.Size = UDim2.new(0, 350, 0, 800)
 frame.Position = UDim2.new(0, 20, 0, 50)
 frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 frame.BorderSizePixel = 0
@@ -86,7 +86,7 @@ openButton.Parent = playerGui
 
 minimizeButton.MouseButton1Click:Connect(function()
     minimized = not minimized
-    frame.Size = minimized and UDim2.new(0, 350, 0, 40) or UDim2.new(0, 350, 0, 750)
+    frame.Size = minimized and UDim2.new(0, 350, 0, 40) or UDim2.new(0, 350, 0, 800)
     for _, child in pairs(frame:GetChildren()) do
         if child ~= minimizeButton and child ~= closeButton and child ~= title then
             child.Visible = not minimized
@@ -153,8 +153,8 @@ local function createToggle(text, posY, callback)
     end)
 end
 
--- 💠 Wave Checkbox
-local restartWaveTarget = 1
+-- 💠 Wave Checkbox (ติ๊กเพื่อเปิด/ปิด Auto Restart)
+local selectedWaves = {}
 local baseY = 60
 local waveFrame = Instance.new("Frame", frame)
 waveFrame.Size = UDim2.new(1, -40, 0, 150)
@@ -165,15 +165,18 @@ local waveTitle = Instance.new("TextLabel", waveFrame)
 waveTitle.Size = UDim2.new(1, 0, 0, 30)
 waveTitle.Position = UDim2.new(0, 0, 0, 0)
 waveTitle.BackgroundTransparency = 1
-waveTitle.Text = "เลือก Wave สำหรับ Restart"
+waveTitle.Text = "เลือก Wave สำหรับ Restart (ติ๊กเพื่อเปิด/ปิด)"
 waveTitle.TextColor3 = textColor
 waveTitle.Font = Enum.Font.SourceSansBold
-waveTitle.TextSize = 20
+waveTitle.TextSize = 18
 waveTitle.TextXAlignment = Enum.TextXAlignment.Left
 
 local waveY = 40
 local waveButtons = {}
-for i=1,5 do
+
+for i = 1, 5 do
+    selectedWaves[i] = false
+
     local cb = Instance.new("TextButton", waveFrame)
     cb.Size = UDim2.new(0, 60, 0, 30)
     cb.Position = UDim2.new(0, (i-1)*65, 0, waveY)
@@ -184,20 +187,22 @@ for i=1,5 do
     cb.TextSize = 16
 
     cb.MouseButton1Click:Connect(function()
-        restartWaveTarget = i
-        for j, btn in ipairs(waveButtons) do
-            btn.BackgroundColor3 = (j==i) and accentColor or Color3.fromRGB(60,60,60)
-        end
-        notify("Restart Wave", "ตั้งค่าเป็น Wave "..i)
+        selectedWaves[i] = not selectedWaves[i]
+        cb.BackgroundColor3 = selectedWaves[i] and accentColor or Color3.fromRGB(60,60,60)
+        notify("Wave "..i, selectedWaves[i] and "เปิดแล้ว" or "ปิดแล้ว")
     end)
+
     table.insert(waveButtons, cb)
 end
 
--- 💠 Toggles เริ่มต่ำกว่า Wave Checkbox
-local toggleStartY = baseY + 160
+-- 💠 Bug Event Toggle
+createToggle("Bug Event Auto Restart", baseY + 160, function(state)
+    bugEventEnabled = state
+    notify("Bug Event", state and "Enabled" or "Disabled")
+end)
 
--- ✅ Auto Retry บนสุด
-createToggle("Auto Retry", toggleStartY, function(state)
+-- 💠 Auto Retry Toggle
+createToggle("Auto Retry", baseY + 220, function(state)
     autoRetryEnabled = state
     notify("Auto Retry", state and "Enabled" or "Disabled")
     if state then
@@ -212,24 +217,8 @@ createToggle("Auto Retry", toggleStartY, function(state)
     end
 end)
 
--- ✅ Bug Event ข้างล่าง
-createToggle("Bug Event Auto Restart", toggleStartY + 60, function(state)
-    bugEventEnabled = state
-    notify("Bug Event", state and "Enabled" or "Disabled")
-    if state then
-        task.spawn(function()
-            while bugEventEnabled do
-                if cw.Value == restartWaveTarget then
-                    remoteRestart:FireServer()
-                end
-                task.wait(0.1)
-            end
-        end)
-    end
-end)
-
--- ✅ Adventure End ข้างล่าง
-createToggle("Adventure End", toggleStartY + 120, function(state)
+-- 💠 Adventure End Toggle
+createToggle("Adventure End", baseY + 280, function(state)
     adventureModeEndEnabled = state
     notify("Adventure End", state and "Enabled" or "Disabled")
     if state then
@@ -245,7 +234,7 @@ end)
 -- 💠 Current Wave Display
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, -40, 0, 30)
-statusLabel.Position = UDim2.new(0, 20, 0, toggleStartY + 220)
+statusLabel.Position = UDim2.new(0, 20, 0, baseY + 350)
 statusLabel.BackgroundTransparency = 1
 statusLabel.TextColor3 = textColor
 statusLabel.Font = Enum.Font.SourceSans
@@ -258,5 +247,17 @@ task.spawn(function()
     while true do
         statusLabel.Text = "Current Wave: "..tostring(cw.Value)
         task.wait(1)
+    end
+end)
+
+-- 💠 Auto Restart Task (เช็ค Wave ทุก 0.1 วินาที)
+task.spawn(function()
+    while true do
+        for wave, isEnabled in ipairs(selectedWaves) do
+            if isEnabled and cw.Value == wave and bugEventEnabled then
+                remoteRestart:FireServer()
+            end
+        end
+        task.wait(0.1)
     end
 end)
