@@ -27,7 +27,7 @@ screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
 
 -- 💠 Frame
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 350, 0, 800)
+frame.Size = UDim2.new(0, 350, 0, 450)
 frame.Position = UDim2.new(0, 20, 0, 50)
 frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 frame.BorderSizePixel = 0
@@ -86,7 +86,7 @@ openButton.Parent = playerGui
 
 minimizeButton.MouseButton1Click:Connect(function()
     minimized = not minimized
-    frame.Size = minimized and UDim2.new(0, 350, 0, 40) or UDim2.new(0, 350, 0, 800)
+    frame.Size = minimized and UDim2.new(0, 350, 0, 40) or UDim2.new(0, 350, 0, 450)
     for _, child in pairs(frame:GetChildren()) do
         if child ~= minimizeButton and child ~= closeButton and child ~= title then
             child.Visible = not minimized
@@ -153,30 +153,26 @@ local function createToggle(text, posY, callback)
     end)
 end
 
--- 💠 Wave Checkbox (ติ๊กเพื่อเปิด/ปิด Auto Restart)
+-- 💠 Wave Checkbox
 local selectedWaves = {}
-local baseY = 60
 local waveFrame = Instance.new("Frame", frame)
-waveFrame.Size = UDim2.new(1, -40, 0, 150)
-waveFrame.Position = UDim2.new(0, 20, 0, baseY)
+waveFrame.Size = UDim2.new(1, -40, 0, 80)
+waveFrame.Position = UDim2.new(0, 20, 0, 60)
 waveFrame.BackgroundTransparency = 1
 
 local waveTitle = Instance.new("TextLabel", waveFrame)
 waveTitle.Size = UDim2.new(1, 0, 0, 30)
 waveTitle.Position = UDim2.new(0, 0, 0, 0)
 waveTitle.BackgroundTransparency = 1
-waveTitle.Text = "เลือก Wave สำหรับ Restart (ติ๊กเพื่อเปิด/ปิด)"
+waveTitle.Text = "เลือก Wave สำหรับ Restart"
 waveTitle.TextColor3 = textColor
 waveTitle.Font = Enum.Font.SourceSansBold
 waveTitle.TextSize = 18
 waveTitle.TextXAlignment = Enum.TextXAlignment.Left
 
 local waveY = 40
-local waveButtons = {}
-
 for i = 1, 5 do
     selectedWaves[i] = false
-
     local cb = Instance.new("TextButton", waveFrame)
     cb.Size = UDim2.new(0, 60, 0, 30)
     cb.Position = UDim2.new(0, (i-1)*65, 0, waveY)
@@ -185,24 +181,21 @@ for i = 1, 5 do
     cb.Text = "Wave "..i
     cb.Font = Enum.Font.SourceSansBold
     cb.TextSize = 16
-
     cb.MouseButton1Click:Connect(function()
         selectedWaves[i] = not selectedWaves[i]
         cb.BackgroundColor3 = selectedWaves[i] and accentColor or Color3.fromRGB(60,60,60)
         notify("Wave "..i, selectedWaves[i] and "เปิดแล้ว" or "ปิดแล้ว")
     end)
-
-    table.insert(waveButtons, cb)
 end
 
 -- 💠 Bug Event Toggle
-createToggle("Bug Event Auto Restart", baseY + 160, function(state)
+createToggle("Bug Event Auto Restart", 150, function(state)
     bugEventEnabled = state
     notify("Bug Event", state and "Enabled" or "Disabled")
 end)
 
 -- 💠 Auto Retry Toggle
-createToggle("Auto Retry", baseY + 220, function(state)
+createToggle("Auto Retry", 210, function(state)
     autoRetryEnabled = state
     notify("Auto Retry", state and "Enabled" or "Disabled")
     if state then
@@ -218,7 +211,7 @@ createToggle("Auto Retry", baseY + 220, function(state)
 end)
 
 -- 💠 Adventure End Toggle
-createToggle("Adventure End", baseY + 280, function(state)
+createToggle("Adventure End", 270, function(state)
     adventureModeEndEnabled = state
     notify("Adventure End", state and "Enabled" or "Disabled")
     if state then
@@ -234,7 +227,7 @@ end)
 -- 💠 Current Wave Display
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, -40, 0, 30)
-statusLabel.Position = UDim2.new(0, 20, 0, baseY + 350)
+statusLabel.Position = UDim2.new(0, 20, 0, 350)
 statusLabel.BackgroundTransparency = 1
 statusLabel.TextColor3 = textColor
 statusLabel.Font = Enum.Font.SourceSans
@@ -250,7 +243,7 @@ task.spawn(function()
     end
 end)
 
--- 💠 Auto Restart Task (เช็ค Wave ทุก 0.1 วินาที)
+-- 💠 Auto Restart Task
 task.spawn(function()
     while true do
         for wave, isEnabled in ipairs(selectedWaves) do
