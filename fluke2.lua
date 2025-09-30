@@ -10,11 +10,12 @@ local playerGui = player:WaitForChild("PlayerGui")
 local cw = ReplicatedStorage:WaitForChild("Values"):WaitForChild("Waves"):WaitForChild("CurrentWave")
 local remoteRestart = ReplicatedStorage:WaitForChild("Remote"):WaitForChild("Server"):WaitForChild("OnGame"):WaitForChild("RestartMatch")
 local voteRetryRemote = ReplicatedStorage:WaitForChild("Remote"):WaitForChild("Server"):WaitForChild("OnGame"):WaitForChild("Voting"):WaitForChild("VoteRetry")
-local adventureModeEndRemote = ReplicatedStorage:WaitForChild("Remote"):WaitForChild("AdventureModeEnd")
 
 -- 💠 Colors
 local textColor = Color3.fromRGB(255, 255, 255)
 local accentColor = Color3.fromRGB(0, 170, 255)
+local activeColor = Color3.fromRGB(0, 255, 0)
+local inactiveColor = Color3.fromRGB(60, 60, 60)
 
 -- 💠 ScreenGui
 local screenGui = Instance.new("ScreenGui")
@@ -27,7 +28,7 @@ screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
 
 -- 💠 Frame
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 350, 0, 450)
+frame.Size = UDim2.new(0, 350, 0, 350)
 frame.Position = UDim2.new(0, 20, 0, 50)
 frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 frame.BorderSizePixel = 0
@@ -86,7 +87,7 @@ openButton.Parent = playerGui
 
 minimizeButton.MouseButton1Click:Connect(function()
     minimized = not minimized
-    frame.Size = minimized and UDim2.new(0, 350, 0, 40) or UDim2.new(0, 350, 0, 450)
+    frame.Size = minimized and UDim2.new(0, 350, 0, 40) or UDim2.new(0, 350, 0, 350)
     for _, child in pairs(frame:GetChildren()) do
         if child ~= minimizeButton and child ~= closeButton and child ~= title then
             child.Visible = not minimized
@@ -116,7 +117,8 @@ local function notify(title, text)
     end)
 end
 
--- 💠 Toggle Function
+-- 💠 Auto Retry Toggle
+local autoRetryEnabled = false
 local function createToggle(text, posY, callback)
     local toggleFrame = Instance.new("Frame")
     toggleFrame.Size = UDim2.new(1, -40, 0, 40)
@@ -144,20 +146,34 @@ local function createToggle(text, posY, callback)
     button.TextSize = 18
     button.Parent = toggleFrame
 
-    local enabled = false
     button.MouseButton1Click:Connect(function()
-        enabled = not enabled
-        button.Text = enabled and "On" or "Off"
-        button.BackgroundColor3 = enabled and accentColor or Color3.fromRGB(80, 80, 80)
-        callback(enabled)
+        autoRetryEnabled = not autoRetryEnabled
+        button.Text = autoRetryEnabled and "On" or "Off"
+        button.BackgroundColor3 = autoRetryEnabled and accentColor or Color3.fromRGB(80,80,80)
+        callback(autoRetryEnabled)
     end)
 end
 
+createToggle("Auto Retry", 60, function(state)
+    if state then
+        task.spawn(function()
+            while autoRetryEnabled do
+                if playerGui:FindFirstChild("GameEndedAnimationUI") then
+                    voteRetryRemote:FireServer()
+                end
+                task.wait(0.1)
+            end
+        end)
+    end
+end)
+
 -- 💠 Wave Checkbox
 local selectedWaves = {}
+local waveButtons = {}
+
 local waveFrame = Instance.new("Frame", frame)
 waveFrame.Size = UDim2.new(1, -40, 0, 80)
-waveFrame.Position = UDim2.new(0, 20, 0, 60)
+waveFrame.Position = UDim2.new(0, 20, 0, 120)
 waveFrame.BackgroundTransparency = 1
 
 local waveTitle = Instance.new("TextLabel", waveFrame)
@@ -176,58 +192,25 @@ for i = 1, 5 do
     local cb = Instance.new("TextButton", waveFrame)
     cb.Size = UDim2.new(0, 60, 0, 30)
     cb.Position = UDim2.new(0, (i-1)*65, 0, waveY)
-    cb.BackgroundColor3 = Color3.fromRGB(60,60,60)
+    cb.BackgroundColor3 = inactiveColor
     cb.TextColor3 = textColor
     cb.Text = "Wave "..i
     cb.Font = Enum.Font.SourceSansBold
     cb.TextSize = 16
+
     cb.MouseButton1Click:Connect(function()
         selectedWaves[i] = not selectedWaves[i]
-        cb.BackgroundColor3 = selectedWaves[i] and accentColor or Color3.fromRGB(60,60,60)
+        cb.BackgroundColor3 = selectedWaves[i] and accentColor or inactiveColor
         notify("Wave "..i, selectedWaves[i] and "เปิดแล้ว" or "ปิดแล้ว")
     end)
+
+    waveButtons[i] = cb
 end
-
--- 💠 Bug Event Toggle
-createToggle("Bug Event Auto Restart", 150, function(state)
-    bugEventEnabled = state
-    notify("Bug Event", state and "Enabled" or "Disabled")
-end)
-
--- 💠 Auto Retry Toggle
-createToggle("Auto Retry", 210, function(state)
-    autoRetryEnabled = state
-    notify("Auto Retry", state and "Enabled" or "Disabled")
-    if state then
-        task.spawn(function()
-            while autoRetryEnabled do
-                if playerGui:FindFirstChild("GameEndedAnimationUI") then
-                    voteRetryRemote:FireServer()
-                end
-                task.wait(0.1)
-            end
-        end)
-    end
-end)
-
--- 💠 Adventure End Toggle
-createToggle("Adventure End", 270, function(state)
-    adventureModeEndEnabled = state
-    notify("Adventure End", state and "Enabled" or "Disabled")
-    if state then
-        task.spawn(function()
-            while adventureModeEndEnabled do
-                adventureModeEndRemote:FireServer(false)
-                task.wait(2)
-            end
-        end)
-    end
-end)
 
 -- 💠 Current Wave Display
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, -40, 0, 30)
-statusLabel.Position = UDim2.new(0, 20, 0, 350)
+statusLabel.Position = UDim2.new(0, 20, 0, 250)
 statusLabel.BackgroundTransparency = 1
 statusLabel.TextColor3 = textColor
 statusLabel.Font = Enum.Font.SourceSans
@@ -243,12 +226,18 @@ task.spawn(function()
     end
 end)
 
--- 💠 Auto Restart Task
+-- 💠 Auto Restart Task with Highlight
 task.spawn(function()
     while true do
         for wave, isEnabled in ipairs(selectedWaves) do
-            if isEnabled and cw.Value == wave and bugEventEnabled then
+            local cb = waveButtons[wave]
+            if isEnabled and cw.Value == wave and autoRetryEnabled then
                 remoteRestart:FireServer()
+                cb.BackgroundColor3 = activeColor
+            elseif selectedWaves[wave] then
+                cb.BackgroundColor3 = accentColor
+            else
+                cb.BackgroundColor3 = inactiveColor
             end
         end
         task.wait(0.1)
