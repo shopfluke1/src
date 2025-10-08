@@ -1,4 +1,4 @@
-local DiscordLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/pndxvo/scr/main/ui.lua"))()
+local DiscordLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/shopfluke1/src/main/ui.lua"))()
 local win = DiscordLib:Window("🐷 FlukeDupe + Build a Zoo")
 local serv = win:Server("MAIN", "")
 local main = serv:Channel("FlukeDupe")
