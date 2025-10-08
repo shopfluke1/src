@@ -1,0 +1,255 @@
+local DiscordLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/shopfluke1/src/main/ui.lua"))()
+local win = DiscordLib:Window("🐷 FlukeDupe + Build a Zoo")
+local serv = win:Server("MAIN", "")
+local main = serv:Channel("FlukeDupe")
+
+-- 📦 ตัวแปรหลัก
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RS = game:GetService("ReplicatedStorage")
+local TPService = game:GetService("TeleportService")
+
+-- 🌟 การตั้งค่า
+local selectedTarget = nil
+
+----------------------------------------------------------
+-- 🔄 Dropdown เลือกผู้เล่น
+----------------------------------------------------------
+local targetDropdown = main:Dropdown("เลือกชื่อตัวที่จะส่งของ", {"..."}, function(playerName)
+    selectedTarget = playerName
+end)
+
+local function updatePlayers()
+    targetDropdown:Clear()
+    targetDropdown:Add("...")
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            targetDropdown:Add(player.Name)
+        end
+    end
+end
+
+updatePlayers()
+Players.PlayerAdded:Connect(updatePlayers)
+Players.PlayerRemoving:Connect(updatePlayers)
+
+main:Button("Refresh Players", function()
+    updatePlayers()
+    selectedTarget = nil
+end)
+
+----------------------------------------------------------
+-- 🍈 ฟังก์ชัน Dupe Durian
+----------------------------------------------------------
+local function DupeDurian()
+    if not selectedTarget then
+        DiscordLib:Notification("❌ Error", "กรุณาเลือกผู้เล่นก่อน", "ตกลง")
+        return
+    end
+
+    local NAMEFRUITS = "Durian"
+    local NANMEPLR = selectedTarget
+
+    -- ตั้งค่า QuickSell
+    RS:WaitForChild("Remote"):WaitForChild("FishingRE"):FireServer("SetEggQuickSell", {
+        ["1"] = "\255",
+        Diamond = false,
+        ["3"] = true,
+        ["2"] = false,
+        ["5"] = false,
+        ["4"] = false,
+        ["6"] = false,
+        Golden = false,
+        Electirc = false,
+        Fire = false,
+        Dino = false,
+        Snow = false
+    })
+
+    -- รอ GUI โหลด
+    repeat task.wait(0.1) until LocalPlayer.PlayerGui and LocalPlayer.PlayerGui:FindFirstChild("Data") and LocalPlayer.PlayerGui.Data:FindFirstChild("Asset")
+
+    -- วนส่งจนหมด
+    repeat
+        task.wait()
+        local targetPlayer = Players:FindFirstChild(NANMEPLR)
+        if targetPlayer then
+            pcall(function()
+                RS:WaitForChild("Remote"):WaitForChild("GiftRE"):FireServer(targetPlayer)
+            end)
+        end
+        if not LocalPlayer.PlayerGui or not LocalPlayer.PlayerGui.Data or not LocalPlayer.PlayerGui.Data.Asset then
+            break
+        end
+    until not LocalPlayer.PlayerGui.Data.Asset:GetAttribute(NAMEFRUITS)
+          or LocalPlayer.PlayerGui.Data.Asset:GetAttribute(NAMEFRUITS) <= 0
+
+    DiscordLib:Notification("🍈 Dupe Durian", "Dupe Durian เสร็จเรียบร้อยแล้ว! จะทำการเตะออก", "ตกลง")
+
+    -- เตะออก
+    pcall(function()
+        TPService:TeleportToPlaceInstance(game.PlaceId, game.JobId)
+    end)
+end
+
+main:Button("🍈 Dupe Durianต้องอยู่ใกล้ๆถือผลไม้ (ส่งแล้วเตะ)", function()
+    DiscordLib:Notification("DupeDurian", "เริ่ม Dupe Durian...", "ตกลง")
+    DupeDurian()
+end)
+
+----------------------------------------------------------
+-- 🥚 ฟังก์ชันส่งไข่ทั้งหมด + Kick
+----------------------------------------------------------
+local function GiftAllEggsKick()
+    if not selectedTarget then
+        DiscordLib:Notification("❌ Error", "กรุณาเลือกผู้เล่นก่อน", "ตกลง")
+        return
+    end
+
+    local NANMEPLR = selectedTarget
+    local P = Players
+    local LP = LocalPlayer
+
+    -- ตั้งค่า QuickSell
+    RS.Remote.FishingRE:FireServer("SetEggQuickSell", {
+        ["1"] = "\255",
+        Diamond = false,
+        ["3"] = true,
+        ["2"] = false,
+        ["5"] = false,
+        ["4"] = false,
+        ["6"] = false,
+        Golden = false,
+        Electirc = false,
+        Fire = false,
+        Dino = false,
+        Snow = false
+    })
+
+    task.wait(3)
+
+    -- Teleport ไปหาผู้เล่นเป้าหมาย
+    local targetPlayer = P:FindFirstChild(NANMEPLR)
+    if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        LP.Character.HumanoidRootPart.CFrame = targetPlayer.Character.HumanoidRootPart.CFrame
+        task.wait(1)
+    end
+
+    -- ส่งไข่ทั้งหมด
+    local AE = LP.PlayerGui.Data.Egg:GetChildren()
+    for i, v in pairs(AE) do
+        RS.Remote.CharacterRE:FireServer("Focus", v.Name)
+        task.wait(0.1)
+        RS.Remote.GiftRE:FireServer(targetPlayer)
+        task.wait(0.3)
+        print(i.."/"..#AE.." ส่งไข่: "..v.Name)
+    end
+
+    DiscordLib:Notification("🥚 ส่งไข่", "ส่งไข่ทั้งหมดเรียบร้อยแล้ว! กำลังเตะออก...", "ตกลง")
+
+    task.wait(3)
+    -- เตะออก
+    TPService:TeleportToPlaceInstance(game.PlaceId, game.JobId)
+end
+
+main:Button("🥚 ส่งไข่ทั้งหมด (Kick)", function()
+    DiscordLib:Notification("ส่งไข่", "เริ่มส่งไข่ไปยัง "..(selectedTarget or "ผู้เล่นเป้าหมาย").."...", "ตกลง")
+    GiftAllEggsKick()
+end)
+
+----------------------------------------------------------
+-- 🐶 ฟังก์ชันส่งสัตว์เลี้ยง Idle ≥ 300000 + Kick
+----------------------------------------------------------
+local function GiftPetsIdleKick()
+    if not selectedTarget then
+        DiscordLib:Notification("❌ Error", "กรุณาเลือกผู้เล่นก่อน", "ตกลง")
+        return
+    end
+
+    local targetPlayer = Players:FindFirstChild(selectedTarget)
+    if not targetPlayer then
+        DiscordLib:Notification("❌ Error", "ผู้เล่นเป้าหมายไม่อยู่ในเซิร์ฟเวอร์", "ตกลง")
+        return
+    end
+
+    -- รอ Attribute DinoEventOnlineTime โหลด
+    repeat task.wait() until LocalPlayer:GetAttribute("DinoEventOnlineTime") ~= nil
+
+    -- ขายสัตว์เลี้ยงทั้งหมดก่อน
+    RS:WaitForChild("Remote"):WaitForChild("PetRE"):FireServer("SellAll", "All", "Pet")
+    task.wait(1)
+
+    -- ตั้งค่า QuickSell ไข่
+    RS:WaitForChild("Remote"):WaitForChild("FishingRE"):FireServer("SetEggQuickSell", {
+        ["1"] = "\255",
+        Diamond = false,
+        ["3"] = true,
+        ["2"] = false,
+        ["5"] = false,
+        ["4"] = false,
+        ["6"] = false,
+        Golden = false,
+        Electirc = false,
+        Fire = false,
+        Dino = false,
+        Snow = false
+    })
+    task.wait(3)
+
+    -- กด ProximityPrompt ของ PlayerBuiltBlocks
+    for _,v in pairs(workspace.PlayerBuiltBlocks:GetChildren()) do
+        if v:FindFirstChild("RootPart") and v.RootPart:FindFirstChild("ProximityPrompt") then
+            fireproximityprompt(v.RootPart.ProximityPrompt)
+            task.wait(0.1)
+        end
+    end
+    task.wait(7)
+
+    -- เก็บชื่อสัตว์เลี้ยงที่จะลบ
+    local deletePets = {}
+    for _, v in pairs(workspace.Pets:GetChildren()) do
+        pcall(function()
+            if v:IsA("Model") and v:GetAttribute("UserId") == LocalPlayer.UserId then
+                if v.RootPart:FindFirstChild("GUI") and v.RootPart.GUI:FindFirstChild("IdleGUI") then
+                    local petspeed = v.RootPart.GUI.IdleGUI.Speed.Text
+                    local number = tonumber((petspeed:gsub("%D", "")))
+                    if number and number >= 300000 then
+                        table.insert(deletePets, v.Name)
+                    end
+                end
+            end
+        end)
+    end
+
+    -- ลบสัตว์เลี้ยง
+    for _, petName in ipairs(deletePets) do
+        RS.Remote.CharacterRE:FireServer("Del", petName)
+    end
+
+    -- Blacklist สัตว์เลี้ยงไม่ให้ส่ง
+    local Blacklist = {"Wolf_E1", "Kangroo_E1", "Rhino_E1", "Lion_E1", "Gorilla_E1", "Seaturtle", "Okapi", "Needlefish", "Panther", "Butterflyfish"}
+
+    -- Teleport ไปหาผู้เล่นเป้าหมาย
+    if targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        LocalPlayer.Character.HumanoidRootPart.CFrame = targetPlayer.Character.HumanoidRootPart.CFrame
+        task.wait(1)
+    end
+
+    -- ส่งสัตว์เลี้ยงทั้งหมดที่ไม่ได้อยู่ใน Blacklist
+    for _, v in pairs(LocalPlayer.PlayerGui.Data.Pets:GetChildren()) do
+        if not table.find(Blacklist, v:GetAttribute("T")) then
+            RS.Remote.CharacterRE:FireServer("Focus", v.Name)
+            task.wait(0.1)
+            RS.Remote.GiftRE:FireServer(targetPlayer)
+            task.wait(0.3)
+        end
+    end
+
+    -- Kick ออกจากเกม
+    TPService:TeleportToPlaceInstance(game.PlaceId, game.JobId)
+end
+
+main:Button("🐶 ส่งสัตว์เลี้ยง Idle ≥300000 (ยังไม่เสร็จ)", function()
+    DiscordLib:Notification("GiftPets", "เริ่มส่งสัตว์เลี้ยงไปยัง "..(selectedTarget or "ผู้เล่นเป้าหมาย").."...", "ตกลง")
+    GiftPetsIdleKick()
+end)
