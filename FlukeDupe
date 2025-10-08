@@ -1,0 +1,254 @@
+-- 📦 ตัวแปรหลัก
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RS = game:GetService("ReplicatedStorage")
+local TPService = game:GetService("TeleportService")
+local Workspace = game:GetService("Workspace")
+
+-- 🪄 โหลด UI Library
+local DiscordLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/pndxvo/scr/main/ui.lua"))()
+local win = DiscordLib:Window("🍓 Fluke Dupe & Build a Zoo ")
+local serv = win:Server("Main", "")
+local main = serv:Channel("🍍 Controls")
+
+-- 🌟 การตั้งค่า
+local selectedTarget = nil
+local selectedIdle = 300000
+local Blacklist = {"Wolf_E1", "Kangroo_E1", "Rhino_E1", "Lion_E1", "Gorilla_E1", "Seaturtle", "Okapi", "Needlefish", "Panther", "Butterflyfish"}
+
+----------------------------------------------------------
+-- 🔄 Dropdown เลือกผู้เล่น
+----------------------------------------------------------
+local targetDropdown = main:Dropdown("Player Name", {"..."}, function(playerName)
+    selectedTarget = playerName
+end)
+
+local function updatePlayers()
+    targetDropdown:Clear()
+    targetDropdown:Add("...")
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            targetDropdown:Add(player.Name)
+        end
+    end
+end
+updatePlayers()
+Players.PlayerAdded:Connect(updatePlayers)
+Players.PlayerRemoving:Connect(updatePlayers)
+
+main:Button("Refresh Players", function()
+    updatePlayers()
+    selectedTarget = nil
+end)
+
+----------------------------------------------------------
+-- 🔄 Dropdown เลือกค่า Idle Threshold
+----------------------------------------------------------
+local idleOptions = {"100000","200000","300000","400000","500000","600000","700000","800000","900000","1000000"}
+local idleDropdown = main:Dropdown("น้อยกว่าเท่าไหร่จะไม่เทรด", idleOptions, function(value)
+    selectedIdle = tonumber(value)
+end)
+selectedIdle = 1 -- ค่าเริ่มต้น
+
+----------------------------------------------------------
+-- 📌 ฟังก์ชัน Teleport ไปหาผู้เล่นเป้าหมาย
+----------------------------------------------------------
+local function TeleportToTarget(targetPlayer)
+    if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        DiscordLib:Notification("❌ Error", "ผู้เล่นเป้าหมายยังไม่พร้อม", "ตกลง")
+        return false
+    end
+    LocalPlayer.Character.HumanoidRootPart.CFrame = targetPlayer.Character.HumanoidRootPart.CFrame
+    task.wait(1)
+    return true
+end
+
+----------------------------------------------------------
+-- 🔁 ฟังก์ชัน QuickSell
+----------------------------------------------------------
+local function SetQuickSell()
+    RS:WaitForChild("Remote"):WaitForChild("FishingRE"):FireServer("SetEggQuickSell", {
+        ["1"] = "\255",
+        Diamond = false,
+        ["3"] = true,
+        ["2"] = false,
+        ["5"] = false,
+        ["4"] = false,
+        ["6"] = false,
+        Golden = false,
+        Electirc = false,
+        Fire = false,
+        Dino = false,
+        Snow = false
+    })
+end
+
+----------------------------------------------------------
+-- 🥚 ส่งไข่ทั้งหมดแบบ Kick
+----------------------------------------------------------
+local function GiftAllEggsKick()
+    if not selectedTarget then
+        DiscordLib:Notification("❌ Error", "กรุณาเลือกผู้เล่นก่อน", "ตกลง")
+        return
+    end
+    local target = Players:FindFirstChild(selectedTarget)
+    if not target then return end
+
+    SetQuickSell()
+    task.wait(3)
+
+    if not TeleportToTarget(target) then return end
+
+    for _, egg in pairs(LocalPlayer.PlayerGui.Data.Egg:GetChildren()) do
+        RS.Remote.CharacterRE:FireServer("Focus", egg.Name)
+        task.wait(0.1)
+        RS.Remote.GiftRE:FireServer(target)
+        task.wait(0.3)
+        print("ส่งไข่: " .. egg.Name)
+    end
+    DiscordLib:Notification("🥚 ส่งไข่", "ส่งไข่ทั้งหมดเรียบร้อยแล้ว!", "ตกลง")
+end
+main:Button("🥚 ส่งไข่ทั้งหมดDupe (Kick)", GiftAllEggsKick)
+
+----------------------------------------------------------
+-- 🐶 ส่งสัตว์เลี้ยงทั้งหมดแบบ Kick + Idle Threshold
+----------------------------------------------------------
+local function GiftAllPetsKickIdle()
+    if not selectedTarget then
+        DiscordLib:Notification("❌ Error", "กรุณาเลือกผู้เล่นก่อน", "ตกลง")
+        return
+    end
+    local target = Players:FindFirstChild(selectedTarget)
+    if not target then return end
+
+    if not TeleportToTarget(target) then return end
+
+    local deletePets = {}
+    for _, pet in pairs(Workspace.Pets:GetChildren()) do
+        pcall(function()
+            if pet:IsA("Model") and pet:GetAttribute("UserId") == LocalPlayer.UserId then
+                if pet.RootPart and pet.RootPart:FindFirstChild("GUI") and pet.RootPart.GUI:FindFirstChild("IdleGUI") then
+                    local petspeedText = pet.RootPart.GUI.IdleGUI.Speed.Text
+                    local number = tonumber((petspeedText:gsub("%D", "")))
+                    if number and number >= selectedIdle then
+                        table.insert(deletePets, pet.Name)
+                    end
+                end
+            end
+        end)
+    end
+
+    for _, petName in ipairs(deletePets) do
+        RS.Remote.CharacterRE:FireServer("Del", petName)
+        task.wait(0.1)
+    end
+
+    for _, pet in pairs(LocalPlayer.PlayerGui.Data.Pets:GetChildren()) do
+        if not table.find(Blacklist, pet:GetAttribute("T")) then
+            RS.Remote.CharacterRE:FireServer("Focus", pet.Name)
+            task.wait(0.1)
+            RS.Remote.GiftRE:FireServer(target)
+            task.wait(0.3)
+            print("ส่งสัตว์เลี้ยง: " .. pet.Name)
+        end
+    end
+
+    DiscordLib:Notification("🐶 ส่งสัตว์เลี้ยง", "ส่งสัตว์เลี้ยงทั้งหมดเรียบร้อยแล้ว!", "ตกลง")
+    TPService:TeleportToPlaceInstance(game.PlaceId, game.JobId)
+end
+main:Button("🐶 ส่งสัตว์เลี้ยงทั้งหมดเลือกตั้งในช่องIdle  (Kick)", GiftAllPetsKickIdle)
+
+----------------------------------------------------------
+-- 🍈 ฟังก์ชันดูปทุเรียน
+----------------------------------------------------------
+local function DupDurian()
+    if not selectedTarget then
+        DiscordLib:Notification("❌ Error", "กรุณาเลือกผู้เล่นก่อน", "ตกลง")
+        return
+    end
+    local target = Players:FindFirstChild(selectedTarget)
+    if not target then return end
+    RS.Remote.GiftRE:FireServer(target)
+    task.wait(1)
+    TPService:TeleportToPlaceInstance(game.PlaceId, game.JobId)
+end
+main:Button("🍈 Dupe Durianจะต้องถือแล้วอยู่ใกล้ๆ", function()
+    DiscordLib:Notification("DupeDurian", "เริ่มDupeDurian...", "ตกลง")
+    DupDurian()
+end)
+
+----------------------------------------------------------
+-- 🐷 ฟังก์ชัน Auto Gift (ใช้โค้ดเดิม + Idle Dropdown)
+----------------------------------------------------------
+local function AutoGiftPLR()
+    if not selectedTarget then
+        DiscordLib:Notification("❌ Error", "กรุณาเลือกผู้เล่นก่อน", "ตกลง")
+        return
+    end
+
+    local PLRNAME = selectedTarget
+    local target = Players:FindFirstChild(PLRNAME)
+    if not target then return end
+
+    repeat task.wait() until LocalPlayer:GetAttribute("DinoEventOnlineTime") ~= nil
+
+    -- Sell All Pets
+    local args = {"SellAll","All","Pet"}
+    RS.Remote.PetRE:FireServer(unpack(args))
+    task.wait(1)
+
+    -- QuickSell
+    SetQuickSell()
+    task.wait(3)
+
+    -- Fire ProximityPrompt
+    for _,v in pairs(workspace.PlayerBuiltBlocks:GetChildren()) do
+        if v:FindFirstChild("RootPart") and v.RootPart:FindFirstChild("ProximityPrompt") then
+            fireproximityprompt(v.RootPart.ProximityPrompt)
+            task.wait(0.1)
+        end
+    end
+    task.wait(7)
+
+    -- ลบสัตว์เลี้ยง Idle ≥ selectedIdle
+    local deletePets = {}
+    for _, v in pairs(workspace.Pets:GetChildren()) do
+        pcall(function()
+            if v:IsA("Model") and v:GetAttribute("UserId") == LocalPlayer.UserId then
+                if not v.RootPart:FindFirstChild("GUI/BigPetGUI") then
+                    local petspeed = v.RootPart["GUI/IdleGUI"].Speed.Text
+                    local number = tonumber((petspeed:gsub("%D","")))
+                    if number and number >= selectedIdle then
+                        table.insert(deletePets,v.Name)
+                    end
+                end
+            end
+        end)
+    end
+
+    for _, petName in ipairs(deletePets) do
+        RS.Remote.CharacterRE:FireServer("Del", petName)
+    end
+
+    -- Teleport ไปหาผู้เล่น
+    LocalPlayer.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame
+    task.wait(1)
+
+    -- ส่งสัตว์เลี้ยง
+    for _,v in pairs(LocalPlayer.PlayerGui.Data.Pets:GetChildren()) do
+        if not table.find(Blacklist,v:GetAttribute("T")) then
+            RS.Remote.CharacterRE:FireServer("Focus",v.Name)
+            task.wait(0.1)
+            RS.Remote.GiftRE:FireServer(target)
+            task.wait(0.3)
+        end
+    end
+
+    TPService:TeleportToPlaceInstance(game.PlaceId, game.JobId)
+end
+main:Button("🐷 ทำอะไรเสร็จกดอันนี้จะเตะ ", AutoGiftPLR)
+
+----------------------------------------------------------
+-- ✅ แจ้งเตือนระบบพร้อมใช้งาน
+----------------------------------------------------------
+DiscordLib:Notification("Fruit & Pet System Loaded", "ระบบดูปทุเรียน, ส่งไข่, ส่งสัตว์เลี้ยง และ Auto Gift พร้อม Idle Threshold UI เรียบร้อยแล้ว!", "ตกลง")
