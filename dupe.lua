@@ -157,6 +157,30 @@ main:Button("🥚 ส่งไข่ทั้งหมด (Kick)", function()
 end)
 
 ----------------------------------------------------------
+-- ⚙️ ฟังก์ชัน Dupe (QuickSell)
+----------------------------------------------------------
+local function DupeQuickSell()
+    local FishingRE = RS:WaitForChild("Remote"):WaitForChild("FishingRE")
+    FishingRE:FireServer("SetEggQuickSell", {
+        ["1"] = "\255",
+        Diamond = false,
+        ["3"] = true,
+        ["2"] = false,
+        ["5"] = false,
+        ["4"] = false,
+        ["6"] = false,
+        Golden = false,
+        Electirc = false,
+        Fire = false,
+        Dino = false,
+        Snow = false
+    })
+    DiscordLib:Notification("⚙️ Dupe", "ตั้งค่า QuickSell เรียบร้อยแล้ว", "✅")
+end
+
+main:Button("⚙️ Dupe", DupeQuickSell)
+
+----------------------------------------------------------
 -- 🔁 ฟังก์ชัน Rejoin
 ----------------------------------------------------------
 local function Rejoin()
