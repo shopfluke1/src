@@ -11,117 +11,158 @@ local win = DiscordLib:Window("🐷 Build a Zoo | FlukeDupe")
 
 -- 🧭 สร้าง Server และ Channel
 local serv = win:Server("Main", "")
-local tgls = serv:Channel("ฟังก์ชันหลัก")
+local main = serv:Channel("ฟังก์ชันหลัก")
 
 -- 🧩 ตัวแปรผู้เล่นเป้าหมาย
 local selectedTarget = nil
 
 -- 📜 อัปเดตรายชื่อผู้เล่น
 local function GetPlayers()
-	local plrs = {}
-	for _, v in ipairs(Players:GetPlayers()) do
-		if v ~= LocalPlayer then
-			table.insert(plrs, v.Name)
-		end
-	end
-	return plrs
+    local plrs = {}
+    for _, v in ipairs(Players:GetPlayers()) do
+        if v ~= LocalPlayer then
+            table.insert(plrs, v.Name)
+        end
+    end
+    return plrs
 end
 
 -- 🧭 เมนูเลือกผู้เล่น
-local dropdown = tgls:Dropdown("🎯 เลือกเป้าหมาย", GetPlayers(), function(value)
-	selectedTarget = value
+local dropdown = main:Dropdown("🎯 เลือกเป้าหมาย", GetPlayers(), function(value)
+    selectedTarget = value
 end)
 
-tgls:Button("🔄 Refresh Players", function()
-	dropdown:Refresh(GetPlayers())
-	DiscordLib:Notification("อัปเดตแล้ว!", "รีเฟรชรายชื่อผู้เล่นเรียบร้อย", "🧾")
+main:Button("🔄 Refresh Players", function()
+    dropdown:Refresh(GetPlayers())
+    DiscordLib:Notification("อัปเดตแล้ว!", "รีเฟรชรายชื่อผู้เล่นเรียบร้อย", "🧾")
 end)
 
-------------------------------------------------------------
--- 🧩 ฟังก์ชันที่ 1: ส่งผลไม้ Durian (Dupe ผลไม้)
-------------------------------------------------------------
-function DupeFruit()
-	if not selectedTarget then
-		DiscordLib:Notification("⛔ ไม่มีเป้าหมาย", "กรุณาเลือกผู้เล่นก่อน", "❌")
-		return
-	end
+----------------------------------------------------------
+-- 🍈 ฟังก์ชัน Dupe Durian (เดิม)
+----------------------------------------------------------
+local function DupeDurian()
+    if not selectedTarget then
+        DiscordLib:Notification("❌ Error", "กรุณาเลือกผู้เล่นก่อน", "ตกลง")
+        return
+    end
 
-	Dupe() -- เรียกใช้แทน FireServer("SetEggQuickSell")
+    local NAMEFRUITS = "Durian"
+    local NANMEPLR = selectedTarget
 
-	local fruit = "Durian"
-	local petFolder = LocalPlayer.PlayerGui:WaitForChild("Data"):WaitForChild("Pets")
-	local remote = RS:WaitForChild("Remote"):WaitForChild("CharacterRE")
+    -- ตั้งค่า QuickSell
+    RS:WaitForChild("Remote"):WaitForChild("FishingRE"):FireServer("SetEggQuickSell", {
+        ["1"] = "\255",
+        Diamond = false,
+        ["3"] = true,
+        ["2"] = false,
+        ["5"] = false,
+        ["4"] = false,
+        ["6"] = false,
+        Golden = false,
+        Electirc = false,
+        Fire = false,
+        Dino = false,
+        Snow = false
+    })
 
-	for _, pet in pairs(petFolder:GetChildren()) do
-		if pet:GetAttribute("T") == fruit then
-			local uid = pet.Name
-			remote:FireServer("Focus", { target = selectedTarget })
-			task.wait(0.2)
-			remote:FireServer("Gift", { target = selectedTarget, pet = uid })
-		end
-	end
+    -- รอ GUI โหลด
+    repeat task.wait(0.1) until LocalPlayer.PlayerGui and LocalPlayer.PlayerGui:FindFirstChild("Data") and LocalPlayer.PlayerGui.Data:FindFirstChild("Asset")
 
-	task.wait(1)
-	TPService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+    -- วนส่งจนหมด
+    repeat
+        task.wait()
+        local targetPlayer = Players:FindFirstChild(NANMEPLR)
+        if targetPlayer then
+            pcall(function()
+                RS:WaitForChild("Remote"):WaitForChild("GiftRE"):FireServer(targetPlayer)
+            end)
+        end
+        if not LocalPlayer.PlayerGui or not LocalPlayer.PlayerGui.Data or not LocalPlayer.PlayerGui.Data.Asset then
+            break
+        end
+    until not LocalPlayer.PlayerGui.Data.Asset:GetAttribute(NAMEFRUITS)
+          or LocalPlayer.PlayerGui.Data.Asset:GetAttribute(NAMEFRUITS) <= 0
+
+    DiscordLib:Notification("🍈 Dupe Durian", "Dupe Durian เสร็จเรียบร้อยแล้ว! จะทำการเตะออก", "ตกลง")
+
+    -- เตะออก
+    pcall(function()
+        TPService:TeleportToPlaceInstance(game.PlaceId, game.JobId)
+    end)
 end
 
-------------------------------------------------------------
--- 🧩 ฟังก์ชันที่ 2: ส่งไข่ทั้งหมด (Kick)
-------------------------------------------------------------
-function GiftAllEggsKick()
-	if not selectedTarget then
-		DiscordLib:Notification("⛔ ไม่มีเป้าหมาย", "กรุณาเลือกผู้เล่นก่อน", "❌")
-		return
-	end
+main:Button("🍈 Dupe Durian (ส่งแล้วเตะ)", function()
+    DiscordLib:Notification("DupeDurian", "เริ่ม Dupe Durian...", "ตกลง")
+    DupeDurian()
+end)
 
-	Dupe() -- เรียกใช้แทน FireServer("SetEggQuickSell")
+----------------------------------------------------------
+-- 🥚 ฟังก์ชันส่งไข่ทั้งหมด + Kick (เดิม)
+----------------------------------------------------------
+local function GiftAllEggsKick()
+    if not selectedTarget then
+        DiscordLib:Notification("❌ Error", "กรุณาเลือกผู้เล่นก่อน", "ตกลง")
+        return
+    end
 
-	local remote = RS:WaitForChild("Remote"):WaitForChild("CharacterRE")
-	local eggFolder = LocalPlayer.PlayerGui.Data:WaitForChild("Egg")
+    local NANMEPLR = selectedTarget
+    local P = Players
+    local LP = LocalPlayer
 
-	for _, egg in pairs(eggFolder:GetChildren()) do
-		local eggName = egg.Name
-		remote:FireServer("Focus", { target = selectedTarget })
-		task.wait(0.25)
-		remote:FireServer("Gift", { target = selectedTarget, pet = eggName })
-	end
+    -- ตั้งค่า QuickSell
+    RS.Remote.FishingRE:FireServer("SetEggQuickSell", {
+        ["1"] = "\255",
+        Diamond = false,
+        ["3"] = true,
+        ["2"] = false,
+        ["5"] = false,
+        ["4"] = false,
+        ["6"] = false,
+        Golden = false,
+        Electirc = false,
+        Fire = false,
+        Dino = false,
+        Snow = false
+    })
 
-	task.wait(1)
-	TPService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+    task.wait(3)
+
+    -- Teleport ไปหาผู้เล่นเป้าหมาย
+    local targetPlayer = P:FindFirstChild(NANMEPLR)
+    if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        LP.Character.HumanoidRootPart.CFrame = targetPlayer.Character.HumanoidRootPart.CFrame
+        task.wait(1)
+    end
+
+    -- ส่งไข่ทั้งหมด
+    local AE = LP.PlayerGui.Data.Egg:GetChildren()
+    for i, v in pairs(AE) do
+        RS.Remote.CharacterRE:FireServer("Focus", v.Name)
+        task.wait(0.1)
+        RS.Remote.GiftRE:FireServer(targetPlayer)
+        task.wait(0.3)
+        print(i.."/"..#AE.." ส่งไข่: "..v.Name)
+    end
+
+    DiscordLib:Notification("🥚 ส่งไข่", "ส่งไข่ทั้งหมดเรียบร้อยแล้ว! กำลังเตะออก...", "ตกลง")
+
+    task.wait(3)
+    -- เตะออก
+    TPService:TeleportToPlaceInstance(game.PlaceId, game.JobId)
 end
 
-------------------------------------------------------------
--- 🧩 ฟังก์ชันที่ 3: Dupe Egg (QuickSell)
-------------------------------------------------------------
-function DupeEgg()
-	Dupe() -- เรียกใช้แทน FireServer("SetEggQuickSell")
-	DiscordLib:Notification("🐣 สำเร็จ", "ตั้งค่า Dupe สำหรับระบบ Dupe แล้ว", "✅")
+main:Button("🥚 ส่งไข่ทั้งหมด (Kick)", function()
+    DiscordLib:Notification("ส่งไข่", "เริ่มส่งไข่ไปยัง "..(selectedTarget or "ผู้เล่นเป้าหมาย").."...", "ตกลง")
+    GiftAllEggsKick()
+end)
+
+----------------------------------------------------------
+-- 🔁 ฟังก์ชัน Rejoin
+----------------------------------------------------------
+local function Rejoin()
+    DiscordLib:Notification("🔄 Rejoin", "กำลังกลับเข้ามาในเซิร์ฟเวอร์...", "⏳")
+    task.wait(1)
+    TPService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
 end
 
-------------------------------------------------------------
--- 🧩 ฟังก์ชันที่ 4: Dupe() ใช้แทน FireServer("SetEggQuickSell")
-------------------------------------------------------------
-function Dupe()
-	local FishingRE = RS:WaitForChild("Remote"):WaitForChild("FishingRE")
-	FishingRE:FireServer("SetEggQuickSell", {
-		["1"] = "\255",
-		Diamond = false,
-		["3"] = true,
-		["2"] = false,
-		["5"] = false,
-		["4"] = false,
-		["6"] = false,
-		Golden = false,
-		Electirc = false,
-		Fire = false,
-		Dino = false,
-		Snow = false
-	})
-end
-
-------------------------------------------------------------
--- 🧠 ปุ่มใน UI
-------------------------------------------------------------
-tgls:Button("🍈 ส่งผลไม้ Durian (Dupe)", DupeFruit)
-tgls:Button("🥚 ส่งไข่ทั้งหมด (Kick)", GiftAllEggsKick)
-tgls:Button("⚙️ กด Dupe ได้เลยอันนี้ไม่ต้องเลือก players  ", DupeEgg)
+main:Button("🔁 Rejoin", Rejoin)
